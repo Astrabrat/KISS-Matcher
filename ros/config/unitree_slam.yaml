@@ -26,7 +26,17 @@
       # Submap-to-submap registration is performed.
       # The main advantage of KISS-Matcher is its super-fast speed in submap matching!
       # see: https://arxiv.org/pdf/2409.15615
-      num_submap_keyframes: 5        # ⭐ > 0. Number of keyframes per submap. It should be an odd number
+      # 11, not the upstream 5. Measured on this robot's own bag
+      # (unitree_20260730_130551), one parameter changed and nothing else: the
+      # loop-closure accept rate went 22% -> 47%, the median KISS-Matcher inlier count
+      # 7 -> 27, and the maximum 105 -> 233.
+      # The submap point count only grew 3408 -> 4632 (+36%), so the point count is not
+      # what changed the result -- the range of viewpoints in the submap is. A submap of
+      # 11 keyframes at keyframe_threshold 1.0 spans ~11 m of travel instead of ~5 m.
+      # Same conclusion as RELOC_TEST_PLAN.md §3.4, §8.4 and §9.3, reached from a
+      # fourth direction.
+      # Re-measure the accept rate at each new site, and keep this value odd.
+      num_submap_keyframes: 11       # ⭐ > 0. Number of keyframes per submap. It should be an odd number
 
     loop:
       verbose: true                  # Enable verbose output

@@ -334,7 +334,10 @@ PoseGraphManager::~PoseGraphManager() {
   if (save_map_bag_) {
     RCLCPP_INFO(this->get_logger(), "NOTE(hlim): skipping final bag save in ROS2 example code.");
   }
-  if (save_map_pcd_) {
+  // The keyframes_.empty() half of this guard is not defensive padding: reserve() below
+  // dereferences keyframes_[0], and saving with zero keyframes is reachable any time
+  // odometry never arrived -- a mapper still waiting on gravity alignment, for one.
+  if (save_map_pcd_ && !keyframes_.empty()) {
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     corrected_map->reserve(keyframes_[0].scan_.size() * keyframes_.size());
 
@@ -1129,7 +1132,10 @@ void PoseGraphManager::saveFlagCallback(const std_msgs::msg::String::ConstShared
     RCLCPP_INFO(this->get_logger(),
                 "NOTE(hlim): rosbag2 saving not directly implemented; skipping.");
   }
-  if (save_map_pcd_) {
+  // The keyframes_.empty() half of this guard is not defensive padding: reserve() below
+  // dereferences keyframes_[0], and saving with zero keyframes is reachable any time
+  // odometry never arrived -- a mapper still waiting on gravity alignment, for one.
+  if (save_map_pcd_ && !keyframes_.empty()) {
     pcl::PointCloud<PointType>::Ptr corrected_map(new pcl::PointCloud<PointType>());
     corrected_map->reserve(keyframes_[0].scan_.size() * keyframes_.size());
 
@@ -1140,6 +1146,21 @@ void PoseGraphManager::saveFlagCallback(const std_msgs::msg::String::ConstShared
       }
     }
     const auto &voxelized_map = voxelize(corrected_map, save_voxel_res_);
+    // seq_directory is created above only when save_in_kitti_format_ is set, but the
+    // map is written into it regardless. With KITTI output off, savePCDFileASCII throws
+    // "Could not open file for writing" from inside a topic callback that has no
+    // handler, which aborts the node and loses the entire mapping session. The
+    // save_pose_graph_ block below already guards itself exactly this way.
+    if (!fs::exists(seq_directory)) {
+      ec.clear();
+      if (!fs::create_directories(seq_directory, ec) || ec) {
+        RCLCPP_ERROR(this->get_logger(),
+                     "Failed to create sequence directory '%s': %s",
+                     seq_directory.c_str(),
+                     ec.message().c_str());
+        return;
+      }
+    }
     pcl::io::savePCDFileASCII<PointType>(seq_directory + "/" + seq_name_ + "_map.pcd",
                                          *voxelized_map);
     RCLCPP_INFO(this->get_logger(), "Accumulated map cloud saved in .pcd format");
