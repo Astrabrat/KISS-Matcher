@@ -75,7 +75,15 @@
       save_map_bag: false                 # not implemented yet
       save_in_kitti_format: true
       seq_name: "site_a"
-      save_dir: "/home/husky/maps/km_maps"                        # Absolute directory for saved results.
+      # NOTE: kiss_matcher_sam runs inside the jetson_vdb_planner container, and
+      # docker-compose.jetson.yml does NOT bind-mount /home/thor/maps into it. A plain
+      # host path here still saves successfully -- into the container overlay
+      # filesystem -- where it is invisible from the host and is destroyed the next
+      # time the container is recreated. That service runs pid: host + privileged, so
+      # /proc/1/root IS the host root filesystem: this writes to the real
+      # /home/thor/maps/km_maps on the Jetson. Simplify back to the plain path once
+      # the compose file binds ${MAPS_PATH:-/home/thor/maps}:/home/thor/maps:rw.
+      save_dir: "/proc/1/root/home/thor/maps/km_maps"                        # Absolute directory for saved results.
                                           # If empty, falls back to the process's current working directory.
                                           # Used by the shutdown save path and as the default for the
                                           # `save_dir` topic trigger.
