@@ -14,6 +14,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 cmake_policy(SET CMP0074 NEW)
 
+# kiss_matcher_core is a STATIC library, and downstream consumers (e.g. spark_fast_lio)
+# link it into SHARED libraries. Without PIC the linker rejects the archive with
+# "relocation R_X86_64_PC32 ... can not be used when making a shared object".
+# Applies to the core target and its FetchContent 3rdparty deps (robin, flann, small_gicp).
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 option(USE_ADDRESS_SANITIZER "Use address sanitizer" OFF)
 if (USE_ADDRESS_SANITIZER)
     add_compile_options(-fsanitize=address -fsanitize-recover=address)
