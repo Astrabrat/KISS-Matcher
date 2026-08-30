@@ -26,10 +26,9 @@
       # Submap-to-submap registration is performed.
       # The main advantage of KISS-Matcher is its super-fast speed in submap matching!
       # see: https://arxiv.org/pdf/2409.15615
-      # 11, not the upstream 5. Measured on this robot's own bag
-      # (unitree_20260730_130551), one parameter changed and nothing else: the
-      # loop-closure accept rate went 22% -> 47%, the median KISS-Matcher inlier count
-      # 7 -> 27, and the maximum 105 -> 233.
+      # 11, not the upstream 5. Measured on unitree_20260730_130551, one parameter
+      # changed and nothing else: the loop-closure accept rate went 22% -> 47%, the
+      # median KISS-Matcher inlier count 7 -> 27, and the maximum 105 -> 233.
       # The submap point count only grew 3408 -> 4632 (+36%), so the point count is not
       # what changed the result -- the range of viewpoints in the submap is. A submap of
       # 11 keyframes at keyframe_threshold 1.0 spans ~11 m of travel instead of ~5 m.
@@ -75,8 +74,13 @@
       save_map_pcd: true
       save_map_bag: false                 # not implemented yet
       save_in_kitti_format: true
-      seq_name: "unitree_lab"
-      save_dir: "/home/niksta/ros2_ws/src/KISS-Matcher/ros/data/unitree_lab/"                        # Absolute directory for saved results.
+      seq_name: "site_c"
+      save_dir: "/home/unitree/maps/km_maps"                        # Absolute directory for saved results.
+                                          # Container path. /home/unitree/maps is bind-mounted to the host
+                                          # ~/maps (docker-compose.yml), the same tree mesh_network delivers
+                                          # into (RECV_DIR=$HOME/maps/received_maps), so saves persist across
+                                          # a container recreate. The mount is required: without it nothing
+                                          # under /home exists in the container and saves are lost.
                                           # If empty, falls back to the process's current working directory.
                                           # Used by the shutdown save path and as the default for the
                                           # `save_dir` topic trigger.
